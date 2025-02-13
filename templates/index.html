@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR Image Upload</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            padding: 20px;
+        }
+        #left-section, #right-section {
+            width: 48%;
+        }
+        #upload-section, #processing, #result {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        #processing {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div id="left-section">
+        <h1>Upload Image for OCR</h1>
+        <div id="upload-section">
+            <form id="upload-form">
+                <input type="file" id="image-input" accept="image/*" multiple>
+                <div>
+                    <label>
+                        <input type="radio" name="column-option" value="1" checked> 1 Column
+                    </label>
+                    <label>
+                        <input type="radio" name="column-option" value="2"> 2 Column
+                    </label>
+                </div>
+                <button type="submit">Process Images</button>
+            </form>
+        </div>
+
+        <div id="processing">
+            <p>Current Processing: <span id="current-processing">None</span></p>
+        </div>
+    </div>
+
+    <div id="right-section">
+        <div id="result">
+            <h2>OCR Results</h2>
+            <textarea id="ocr-results"></textarea>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const files = document.getElementById('image-input').files;
+            if (files.length === 0) {
+                alert('Please select an image file.');
+                return;
+            }
+
+            const columnOption = document.querySelector('input[name="column-option"]:checked').value;
+            const processingSpan = document.getElementById('current-processing');
+            const resultsTextarea = document.getElementById('ocr-results');
+            resultsTextarea.value = '';
+
+            for (const file of files) {
+                processingSpan.textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = async function(event) {
+                    const base64Image = event.target.result.split(',')[1];
+                    const response = await fetch('/ocr', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ image: base64Image, column_option: columnOption })
+                    });
+
+                    const result = await response.json();
+                    if (response.ok) {
+                        resultsTextarea.value += `OCR Result for ${file.name}:\n${result.text}\n\n`;
+                    } else {
+                        resultsTextarea.value += `Error for ${file.name}: ${result.error}\n\n`;
+                    }
+                    processingSpan.textContent = 'None';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html>
