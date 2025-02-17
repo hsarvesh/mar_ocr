@@ -11,7 +11,10 @@ app = Flask(__name__)
 
 def save_image(image, original_filename, step):
     """Helper function to save the image with a step description."""
-    filename = f"{os.path.splitext(original_filename)[0]}_{step}.jpg"
+    output_dir = '.output'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    filename = os.path.join(output_dir, f"{os.path.splitext(original_filename)[0]}_{step}.jpg")
     cv2.imwrite(filename, image)
     print(f"Saved image as {filename}")
 

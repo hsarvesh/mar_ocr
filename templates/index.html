@@ -38,6 +38,9 @@
             margin-top: 20px;
             font-weight: bold;
             color: #333;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
         }
         #result {
             margin-top: 20px;
@@ -95,7 +98,8 @@
         </div>
 
         <div id="processing">
-            <p>Current Processing: <span id="current-processing">None</span></p>
+            <p>Current Processing:</p>
+            <div id="current-processing">None</div>
         </div>
     </div>
 
@@ -116,14 +120,20 @@
             }
 
             const columnOption = document.querySelector('input[name="column-option"]:checked').value;
-            const processingSpan = document.getElementById('current-processing');
+            const processingDiv = document.getElementById('current-processing');
             const resultsTextarea = document.getElementById('ocr-results');
             resultsTextarea.value = '';
+            processingDiv.textContent = '';
 
-            processingSpan.textContent = 'Starting processing...';
+            const logMessage = (message) => {
+                processingDiv.textContent += message + '\n';
+                processingDiv.scrollTop = processingDiv.scrollHeight;
+            };
+
+            logMessage('Starting processing...');
 
             for (const file of files) {
-                processingSpan.textContent = `Processing ${file.name}...`;
+                logMessage(`Submitting ${file.name} with column option ${columnOption}...`);
                 const reader = new FileReader();
                 reader.onload = async function(event) {
                     const base64Image = event.target.result.split(',')[1];
@@ -137,16 +147,17 @@
 
                     const result = await response.json();
                     if (response.ok) {
+                        logMessage(`Results received for ${file.name}.`);
                         resultsTextarea.value += `OCR Result for ${file.name}:\n${result.text}\n\n`;
+                        logMessage(`Results updated in the results section for ${file.name}.`);
                     } else {
-                        resultsTextarea.value += `Error for ${file.name}: ${result.error}\n\n`;
+                        logMessage(`Error for ${file.name}: ${result.error}`);
                     }
-                    processingSpan.textContent = 'None';
                 };
                 reader.readAsDataURL(file);
             }
 
-            processingSpan.textContent = 'Processing completed.';
+            logMessage('Processing completed.');
         });
     </script>
 </body>
